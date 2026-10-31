@@ -1,13 +1,41 @@
-// Clave para guardar en LocalStorage
-const STORAGE_KEY = 'bodega_inventario_db';
+// ==========================================
+// 1. IMPORTACIONES DE FIREBASE (Única vez)
+// ==========================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    doc, 
+    deleteDoc, 
+    updateDoc, 
+    onSnapshot 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Estado global de productos
-let inventario = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
-    { id: '1', nombre: 'Cerveza Poker 330ml', categoria: 'Cervezas', precio: 3500, stock: 120 },
-    { id: '2', nombre: 'Coca Cola 1.5L', categoria: 'Gaseosas', precio: 6000, stock: 45 }
-];
+// ==========================================
+// 2. CONFIGURACIÓN DE FIREBASE
+// ==========================================
+const firebaseConfig = {
+    apiKey: "AIzaSyDYUrDD56_n0bncgXReyNFMJ9OMcVjapIM",
+    authDomain: "inventario-32ebc.firebaseapp.com",
+    projectId: "inventario-32ebc",
+    storageBucket: "inventario-32ebc.firebasestorage.app",
+    messagingSenderId: "781622125997",
+    appId: "1:781622125997:web:ed272b07df30554fbc2d24",
+    measurementId: "G-BFTQF2QKNL"
+};
 
-// Elementos del DOM
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
+
+// ==========================================
+// 3. ELEMENTOS DEL DOM Y ESTADO LOCAL
+// ==========================================
+let inventarioFirestore = []; // Almacenará los datos que vienen de Firestore
+
 const form = document.getElementById('inventory-form');
 const editIdInput = document.getElementById('edit-id');
 const nameInput = document.getElementById('prod-name');
@@ -20,35 +48,57 @@ const tbody = document.getElementById('inventory-tbody');
 const emptyState = document.getElementById('empty-state');
 const searchInput = document.getElementById('search-input');
 
-// Renderizar la tabla de productos
+// ==========================================
+// 4. SINCRONIZACIÓN EN TIEMPO REAL (FIRESTORE)
+// ==========================================
+onSnapshot(collection(db, "inventario"), (snapshot) => {
+    inventarioFirestore = [];
+    
+    snapshot.forEach((docSnap) => {
+        inventarioFirestore.push({
+            id: docSnap.id,
+            ...docSnap.data()
+        });
+    });
+
+    // Renderizar la tabla cada vez que Firestore detecte un cambio
+    renderTable(searchInput ? searchInput.value : '');
+});
+
+// ==========================================
+// 5. RENDERIZAR TABLA Y ESTADÍSTICAS
+// ==========================================
 function renderTable(filter = '') {
+    if (!tbody) return;
     tbody.innerHTML = '';
     
-    const productosFiltrados = inventario.filter(p => 
-        p.nombre.toLowerCase().includes(filter.toLowerCase()) ||
-        p.categoria.toLowerCase().includes(filter.toLowerCase())
+    const productosFiltrados = inventarioFirestore.filter(p => 
+        (p.nombre && p.nombre.toLowerCase().includes(filter.toLowerCase())) ||
+        (p.categoria && p.categoria.toLowerCase().includes(filter.toLowerCase()))
     );
 
     if (productosFiltrados.length === 0) {
-        emptyState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'block';
     } else {
-        emptyState.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'none';
         
         productosFiltrados.forEach(prod => {
             const tr = document.createElement('tr');
-            const totalProducto = prod.precio * prod.stock;
+            const precio = Number(prod.precio) || 0;
+            const stock = Number(prod.stock) || 0;
+            const totalProducto = precio * stock;
 
             tr.innerHTML = `
-                <td><strong>${prod.nombre}</strong></td>
-                <td><span class="badge">${prod.categoria}</span></td>
-                <td>$${prod.precio.toLocaleString('es-CO')}</td>
-                <td><strong>${prod.stock}</strong> u.</td>
+                <td><strong>${prod.nombre || 'Sin nombre'}</strong></td>
+                <td><span class="badge">${prod.categoria || 'General'}</span></td>
+                <td>$${precio.toLocaleString('es-CO')}</td>
+                <td><strong>${stock}</strong> u.</td>
                 <td>$${totalProducto.toLocaleString('es-CO')}</td>
                 <td class="actions-cell">
-                    <button class="btn-icon edit" onclick="startEdit('${prod.id}')" title="Editar">
+                    <button class="btn-icon edit" onclick="window.startEdit('${prod.id}')" title="Editar">
                         <i class="fa-solid fa-pen"></i>
                     </button>
-                    <button class="btn-icon delete" onclick="deleteProduct('${prod.id}')" title="Eliminar">
+                    <button class="btn-icon delete" onclick="window.deleteProduct('${prod.id}')" title="Eliminar">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </td>
@@ -60,90 +110,111 @@ function renderTable(filter = '') {
     updateStats();
 }
 
-// Actualizar contadores del header
 function updateStats() {
-    const totalProductos = inventario.length;
-    const totalStock = inventario.reduce((sum, p) => sum + Number(p.stock), 0);
-    const totalValor = inventario.reduce((sum, p) => sum + (p.precio * p.stock), 0);
+    const totalProductos = inventarioFirestore.length;
+    const totalStock = inventarioFirestore.reduce((sum, p) => sum + Number(p.stock || 0), 0);
+    const totalValor = inventarioFirestore.reduce((sum, p) => sum + ((Number(p.precio) || 0) * (Number(p.stock) || 0)), 0);
 
-    document.getElementById('stat-total-prod').textContent = totalProductos;
-    document.getElementById('stat-total-stock').textContent = totalStock;
-    document.getElementById('stat-total-val').textContent = `$${totalValor.toLocaleString('es-CO')}`;
+    const elTotalProd = document.getElementById('stat-total-prod');
+    const elTotalStock = document.getElementById('stat-total-stock');
+    const elTotalVal = document.getElementById('stat-total-val');
+
+    if (elTotalProd) elTotalProd.textContent = totalProductos;
+    if (elTotalStock) elTotalStock.textContent = totalStock;
+    if (elTotalVal) elTotalVal.textContent = `$${totalValor.toLocaleString('es-CO')}`;
 }
 
-// Guardar en LocalStorage
-function saveToStorage() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(inventario));
+// ==========================================
+// 6. GESTIÓN DE FORMULARIO (GUARDAR / EDITAR)
+// ==========================================
+if (form) {
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const id = editIdInput ? editIdInput.value : '';
+        const nombre = nameInput.value.trim();
+        const categoria = categoryInput.value;
+        const precio = parseFloat(priceInput.value) || 0;
+        const stock = parseInt(stockInput.value) || 0;
+
+        try {
+            if (id) {
+                // Actualizar documento existente en Firestore
+                const docRef = doc(db, "inventario", id);
+                await updateDoc(docRef, {
+                    nombre,
+                    categoria,
+                    precio,
+                    stock
+                });
+                console.log("¡Producto actualizado!");
+            } else {
+                // Crear nuevo documento en Firestore
+                await addDoc(collection(db, "inventario"), {
+                    nombre,
+                    categoria,
+                    precio,
+                    stock,
+                    fecha: new Date()
+                });
+                console.log("¡Producto guardado en Firestore!");
+            }
+
+            resetForm();
+        } catch (error) {
+            console.error("Error al guardar el producto: ", error);
+            alert("Hubo un error al guardar en la base de datos.");
+        }
+    });
 }
-
-// Agregar o Actualizar producto
-form.addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const id = editIdInput.value;
-    const nombre = nameInput.value.trim();
-    const categoria = categoryInput.value;
-    const precio = parseFloat(priceInput.value);
-    const stock = parseInt(stockInput.value);
-
-    if (id) {
-        // Actualizar existente
-        inventario = inventario.map(p => p.id === id ? { id, nombre, categoria, precio, stock } : p);
-    } else {
-        // Crear nuevo
-        const nuevoProducto = {
-            id: Date.now().toString(),
-            nombre,
-            categoria,
-            precio,
-            stock
-        };
-        inventario.push(nuevoProducto);
-    }
-
-    saveToStorage();
-    renderTable();
-    resetForm();
-});
 
 // Preparar formulario para edición
-function startEdit(id) {
-    const prod = inventario.find(p => p.id === id);
+window.startEdit = function(id) {
+    const prod = inventarioFirestore.find(p => p.id === id);
     if (!prod) return;
 
-    editIdInput.value = prod.id;
-    nameInput.value = prod.nombre;
-    categoryInput.value = prod.categoria;
-    priceInput.value = prod.precio;
-    stockInput.value = prod.stock;
+    if (editIdInput) editIdInput.value = prod.id;
+    if (nameInput) nameInput.value = prod.nombre || '';
+    if (categoryInput) categoryInput.value = prod.categoria || '';
+    if (priceInput) priceInput.value = prod.precio || 0;
+    if (stockInput) stockInput.value = prod.stock || 0;
 
-    btnSave.innerHTML = `<i class="fa-solid fa-rotate"></i> Actualizar`;
-    btnCancel.style.display = 'inline-block';
-}
+    if (btnSave) btnSave.innerHTML = `<i class="fa-solid fa-rotate"></i> Actualizar`;
+    if (btnCancel) btnCancel.style.display = 'inline-block';
+};
 
 // Cancelar edición
-btnCancel.addEventListener('click', resetForm);
+if (btnCancel) {
+    btnCancel.addEventListener('click', resetForm);
+}
 
 function resetForm() {
-    form.reset();
-    editIdInput.value = '';
-    btnSave.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar Producto`;
-    btnCancel.style.display = 'none';
+    if (form) form.reset();
+    if (editIdInput) editIdInput.value = '';
+    if (btnSave) btnSave.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar Producto`;
+    if (btnCancel) btnCancel.style.display = 'none';
 }
 
-// Eliminar producto
-function deleteProduct(id) {
+// ==========================================
+// 7. ELIMINAR PRODUCTO
+// ==========================================
+window.deleteProduct = async function(id) {
     if (confirm('¿Estás seguro de que deseas eliminar este producto del inventario?')) {
-        inventario = inventario.filter(p => p.id !== id);
-        saveToStorage();
-        renderTable();
+        try {
+            await deleteDoc(doc(db, "inventario", id));
+            console.log("Producto eliminado de Firestore");
+        } catch (error) {
+            console.error("Error al eliminar: ", error);
+            alert("No se pudo eliminar el producto.");
+        }
     }
+};
+
+// ==========================================
+// 8. BÚSQUEDA EN TIEMPO REAL
+// ==========================================
+if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+        renderTable(e.target.value);
+    });
 }
-
-// Búsqueda en tiempo real
-searchInput.addEventListener('input', (e) => {
-    renderTable(e.target.value);
-});
-
-// Inicialización
-renderTable();
