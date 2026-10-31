@@ -145,7 +145,7 @@ body {
     color: var(--success-color);
 }
 
-/* --- Contenedor Principal (1 sola columna vertical en todos los dispositivos) --- */
+/* --- Contenedor Principal (Una sola columna vertical) --- */
 .container {
     max-width: 900px;
     margin: 1.5rem auto;
@@ -153,13 +153,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-}
-
-.sidebar, .content-area {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    width: 100%;
 }
 
 /* --- Tarjetas (Cards) --- */

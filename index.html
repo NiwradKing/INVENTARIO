@@ -39,162 +39,155 @@
 
     <main class="container">
         
-        <!-- Panel Izquierdo: Formularios -->
-        <div class="sidebar">
-            <!-- Formulario Producto Nuevo -->
-            <section class="card form-card">
-                <h2><i class="fa-solid fa-square-plus"></i> Registrar Nueva Bebida</h2>
-                <form id="inventory-form">
-                    <input type="hidden" id="edit-id">
-                    
+        <!-- Formulario Producto Nuevo -->
+        <section class="card form-card">
+            <h2><i class="fa-solid fa-square-plus"></i> Registrar Nueva Bebida</h2>
+            <form id="inventory-form">
+                <input type="hidden" id="edit-id">
+                
+                <div class="form-group">
+                    <label for="prod-name">Nombre de la Bebida</label>
+                    <input type="text" id="prod-name" placeholder="Ej: Club Colombia 330ml" required>
+                </div>
+
+                <div class="form-row">
                     <div class="form-group">
-                        <label for="prod-name">Nombre de la Bebida</label>
-                        <input type="text" id="prod-name" placeholder="Ej: Club Colombia 330ml" required>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="prod-category">Categoría</label>
-                            <select id="prod-category" required>
-                                <option value="Cervezas">Cervezas</option>
-                                <option value="Gaseosas">Gaseosas</option>
-                                <option value="Licores">Licores</option>
-                                <option value="Aguas y Jugos">Aguas y Jugos</option>
-                                <option value="Energizantes">Energizantes</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="prod-price">Precio Unitario (COP)</label>
-                            <input type="number" id="prod-price" min="0" step="50" placeholder="Ej: 4500" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="prod-stock">Cantidad Inicial</label>
-                        <input type="number" id="prod-stock" min="0" placeholder="Ej: 48" required>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" id="btn-save" class="btn btn-primary">
-                            <i class="fa-solid fa-floppy-disk"></i> Guardar Producto
-                        </button>
-                        <button type="button" id="btn-cancel" class="btn btn-secondary" style="display: none;">
-                            Cancelar
-                        </button>
-                    </div>
-                </form>
-            </section>
-
-            <!-- Card de Registro de Salida / Retiro -->
-            <section class="card form-card">
-                <h2><i class="fa-solid fa-boxes-packing"></i> Registrar Salida / Retiro</h2>
-                <form id="out-form">
-                    <div class="form-group">
-                        <label for="out-select">Seleccionar Producto</label>
-                        <select id="out-select" required>
-                            <option value="">-- Seleccionar --</option>
+                        <label for="prod-category">Categoría</label>
+                        <select id="prod-category" required>
+                            <option value="Cervezas">Cervezas</option>
+                            <option value="Gaseosas">Gaseosas</option>
+                            <option value="Licores">Licores</option>
+                            <option value="Aguas y Jugos">Aguas y Jugos</option>
+                            <option value="Energizantes">Energizantes</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="out-qty">Cantidad a Retirar</label>
-                        <input type="number" id="out-qty" min="1" placeholder="Ej: 5" required>
+                        <label for="prod-price">Precio Unitario (COP)</label>
+                        <input type="number" id="prod-price" min="0" step="50" placeholder="Ej: 4500" required>
                     </div>
+                </div>
 
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fa-solid fa-minus-circle"></i> Confirmar Salida
+                <div class="form-group">
+                    <label for="prod-stock">Cantidad Inicial</label>
+                    <input type="number" id="prod-stock" min="0" placeholder="Ej: 48" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" id="btn-save" class="btn btn-primary">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar Producto
                     </button>
-                </form>
-            </section>
-        </div>
+                    <button type="button" id="btn-cancel" class="btn btn-secondary" style="display: none;">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </section>
 
-        <!-- Panel Derecho: Tablas de Inventario, Surtido Masivo e Historial -->
-        <div class="content-area">
+        <!-- Card de Registro de Salida / Retiro -->
+        <section class="card form-card">
+            <h2><i class="fa-solid fa-boxes-packing"></i> Registrar Salida / Retiro</h2>
+            <form id="out-form">
+                <div class="form-group">
+                    <label for="out-select">Seleccionar Producto</label>
+                    <select id="out-select" required>
+                        <option value="">-- Seleccionar --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="out-qty">Cantidad a Retirar</label>
+                    <input type="number" id="out-qty" min="1" placeholder="Ej: 5" required>
+                </div>
+
+                <button type="submit" class="btn btn-danger">
+                    <i class="fa-solid fa-minus-circle"></i> Confirmar Salida
+                </button>
+            </form>
+        </section>
+
+        <!-- Panel de Surtido Masivo -->
+        <section class="card form-card">
+            <h2><i class="fa-solid fa-truck-ramp-box"></i> Ingreso Masivo de Surtido</h2>
+            <p class="section-desc">Selecciona el producto que llegó, ingresa cuántas unidades se suman y actualiza su precio si cambió.</p>
             
-            <!-- Panel de Surtido Masivo (Entrada de mercancía rápida) -->
-            <section class="card form-card">
-                <h2><i class="fa-solid fa-truck-ramp-box"></i> Ingreso Masivo de Surtido</h2>
-                <p class="section-desc">Selecciona el producto que llegó, ingresa cuántas unidades se suman y actualiza su precio si cambió.</p>
-                
-                <div class="table-responsive">
-                    <table class="surtido-table">
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Sumar Stock (+ Cantidad)</th>
-                                <th>Nuevo Precio (Opcional)</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="surtido-tbody">
-                            <!-- Se llena dinámicamente -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+            <div class="table-responsive">
+                <table class="surtido-table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Sumar Stock (+ Cantidad)</th>
+                            <th>Nuevo Precio (Opcional)</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="surtido-tbody">
+                        <!-- Se llena dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-            <!-- Tabla de Existencias -->
-            <section class="card table-card">
-                <div class="table-header">
-                    <h2><i class="fa-solid fa-boxes-stacked"></i> Existencias en Bodega</h2>
-                    <div class="search-box">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" id="search-input" placeholder="Buscar bebida...">
-                    </div>
+        <!-- Tabla de Existencias -->
+        <section class="card table-card">
+            <div class="table-header">
+                <h2><i class="fa-solid fa-boxes-stacked"></i> Existencias en Bodega</h2>
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="search-input" placeholder="Buscar bebida...">
                 </div>
+            </div>
 
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Categoría</th>
-                                <th>Precio Unit.</th>
-                                <th>Stock</th>
-                                <th>Valor Total</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventory-tbody"></tbody>
-                    </table>
-                </div>
-                
-                <div id="empty-state" class="empty-state">
-                    <i class="fa-solid fa-box-open"></i>
-                    <p>No hay bebidas registradas en el inventario.</p>
-                </div>
-            </section>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Precio Unit.</th>
+                            <th>Stock</th>
+                            <th>Valor Total</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-tbody"></tbody>
+                </table>
+            </div>
+            
+            <div id="empty-state" class="empty-state">
+                <i class="fa-solid fa-box-open"></i>
+                <p>No hay bebidas registradas en el inventario.</p>
+            </div>
+        </section>
 
-            <!-- Tabla de Historial Auditor -->
-            <section class="card table-card">
-                <div class="table-header">
-                    <h2><i class="fa-solid fa-clock-rotate-left"></i> Registro Auditor de Movimientos</h2>
-                    <button id="btn-clear-history" class="btn btn-secondary btn-sm">
-                        <i class="fa-solid fa-trash"></i> Limpiar Historial
-                    </button>
-                </div>
+        <!-- Tabla de Historial Auditor -->
+        <section class="card table-card">
+            <div class="table-header">
+                <h2><i class="fa-solid fa-clock-rotate-left"></i> Registro Auditor de Movimientos</h2>
+                <button id="btn-clear-history" class="btn btn-secondary btn-sm">
+                    <i class="fa-solid fa-trash"></i> Limpiar Historial
+                </button>
+            </div>
 
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Fecha y Hora</th>
-                                <th>Usuario</th>
-                                <th>Dispositivo</th>
-                                <th>Acción Realizada</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-tbody"></tbody>
-                    </table>
-                </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha y Hora</th>
+                            <th>Usuario</th>
+                            <th>Dispositivo</th>
+                            <th>Acción Realizada</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody"></tbody>
+                </table>
+            </div>
 
-                <div id="empty-history" class="empty-state">
-                    <i class="fa-solid fa-receipt"></i>
-                    <p>No hay registro de actividad reciente.</p>
-                </div>
-            </section>
-        </div>
+            <div id="empty-history" class="empty-state">
+                <i class="fa-solid fa-receipt"></i>
+                <p>No hay registro de actividad reciente.</p>
+            </div>
+        </section>
 
     </main>
 
