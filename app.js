@@ -290,6 +290,16 @@ function startEdit(id) {
     btnCancel.style.display = 'inline-block';
 }
 
+// Control del menú desplegable (Acordeón) para Surtido Masivo
+const accordionToggle = document.getElementById('accordion-toggle');
+const accordionCard = document.querySelector('.accordion-card');
+
+if (accordionToggle && accordionCard) {
+    accordionToggle.addEventListener('click', () => {
+        accordionCard.classList.toggle('open');
+    });
+}
+
 btnCancel.addEventListener('click', resetForm);
 function resetForm() {
     form.reset();

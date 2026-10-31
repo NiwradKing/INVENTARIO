@@ -106,25 +106,34 @@
             </form>
         </section>
 
-        <!-- Panel de Surtido Masivo -->
-        <section class="card form-card">
-            <h2><i class="fa-solid fa-truck-ramp-box"></i> Ingreso Masivo de Surtido</h2>
-            <p class="section-desc">Selecciona el producto que llegó, ingresa cuántas unidades se suman y actualiza su precio si cambió.</p>
+        <!-- Panel Desplegable de Surtido Masivo -->
+        <section class="card form-card accordion-card">
+            <div class="accordion-header" id="accordion-toggle">
+                <div class="accordion-title">
+                    <i class="fa-solid fa-truck-ramp-box"></i>
+                    <span>Menú Desplegable: Ingreso Masivo de Surtido</span>
+                </div>
+                <i class="fa-solid fa-chevron-down" id="accordion-icon"></i>
+            </div>
             
-            <div class="table-responsive">
-                <table class="surtido-table">
-                    <thead>
-                        <tr>
-                            <th>Producto</th>
-                            <th>Sumar Stock (+ Cantidad)</th>
-                            <th>Nuevo Precio (Opcional)</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="surtido-tbody">
-                        <!-- Se llena dinámicamente -->
-                    </tbody>
-                </table>
+            <div class="accordion-content" id="accordion-body">
+                <p class="section-desc">Selecciona el producto que llegó, ingresa cuántas unidades se suman y actualiza su precio si cambió.</p>
+                
+                <div class="table-responsive">
+                    <table class="surtido-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Sumar Stock (+ Cantidad)</th>
+                                <th>Nuevo Precio (Opcional)</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="surtido-tbody">
+                            <!-- Se llena dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
 

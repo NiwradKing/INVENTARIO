@@ -26,7 +26,6 @@ body {
     padding-bottom: 2rem;
 }
 
-/* --- Barra de Navegación --- */
 .navbar {
     background-color: var(--card-bg);
     border-bottom: 1px solid var(--border-color);
@@ -87,7 +86,6 @@ body {
     border-radius: 4px;
 }
 
-/* --- Estadísticas Superiores --- */
 .nav-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -145,7 +143,6 @@ body {
     color: var(--success-color);
 }
 
-/* --- Contenedor Principal (Una sola columna vertical) --- */
 .container {
     max-width: 900px;
     margin: 1.5rem auto;
@@ -155,7 +152,6 @@ body {
     gap: 1.5rem;
 }
 
-/* --- Tarjetas (Cards) --- */
 .card {
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
@@ -176,6 +172,49 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+/* --- Estilos del Menú Desplegable (Acordeón de Surtido) --- */
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.accordion-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--text-main);
+}
+
+.accordion-title i {
+    color: var(--success-color);
+}
+
+#accordion-icon {
+    transition: transform 0.3s ease;
+    color: var(--text-muted);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease-out, margin-top 0.35s ease;
+}
+
+/* Estado cuando está abierto */
+.accordion-card.open .accordion-content {
+    max-height: 1000px; /* Altura suficiente para mostrar la lista */
+    margin-top: 1rem;
+}
+
+.accordion-card.open #accordion-icon {
+    transform: rotate(180deg);
 }
 
 .section-desc {
@@ -254,7 +293,6 @@ input:focus, select:focus {
 .btn-secondary { background-color: var(--border-color); color: white; }
 .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
 
-/* --- Tablas y Cabeceras --- */
 .table-header {
     display: flex;
     flex-direction: column;
