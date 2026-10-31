@@ -26,6 +26,7 @@ body {
     padding-bottom: 2rem;
 }
 
+/* --- Barra de Navegación --- */
 .navbar {
     background-color: var(--card-bg);
     border-bottom: 1px solid var(--border-color);
@@ -86,6 +87,7 @@ body {
     border-radius: 4px;
 }
 
+/* --- Estadísticas Superiores --- */
 .nav-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -143,6 +145,7 @@ body {
     color: var(--success-color);
 }
 
+/* --- Contenedor Principal (Corrección para PC) --- */
 .container {
     max-width: 1400px;
     margin: 1.5rem auto;
@@ -155,8 +158,10 @@ body {
 @media (min-width: 1024px) {
     .container {
         display: grid;
-        grid-template-columns: 380px 1fr;
+        grid-template-columns: 350px 1fr; /* Ancho fijo equilibrado para los formularios y la zona de tablas */
+        align-items: start;
         padding: 0 1rem;
+        gap: 1.5rem;
     }
 }
 
@@ -164,8 +169,10 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    width: 100%;
 }
 
+/* --- Tarjetas (Cards) --- */
 .card {
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
@@ -263,6 +270,7 @@ input:focus, select:focus {
 .btn-secondary { background-color: var(--border-color); color: white; }
 .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
 
+/* --- Tablas y Cabeceras --- */
 .table-header {
     display: flex;
     flex-direction: column;
@@ -332,6 +340,46 @@ th {
     font-weight: 600;
 }
 
+/* --- Tabla de Surtido Masivo --- */
+.surtido-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.surtido-table th, 
+.surtido-table td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+}
+
+.surtido-table th:nth-child(1), 
+.surtido-table td:nth-child(1) {
+    width: 35%;
+}
+
+.surtido-table th:nth-child(2), 
+.surtido-table td:nth-child(2) {
+    width: 25%;
+}
+
+.surtido-table th:nth-child(3), 
+.surtido-table td:nth-child(3) {
+    width: 25%;
+}
+
+.surtido-table th:nth-child(4), 
+.surtido-table td:nth-child(4) {
+    width: 15%;
+    text-align: right;
+}
+
+.surtido-table input {
+    width: 100%;
+    max-width: 130px;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+}
+
 .badge {
     padding: 0.2rem 0.5rem;
     border-radius: 20px;
@@ -381,46 +429,4 @@ th {
 .empty-state i {
     font-size: 2.2rem;
     margin-bottom: 0.5rem;
-}
-
-/* --- Corrección de Alineación para la Tabla de Surtido Masivo --- */
-.surtido-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.surtido-table th, 
-.surtido-table td {
-    padding: 0.85rem 1rem;
-    vertical-align: middle;
-}
-
-/* Anchos definidos para cada columna del surtido para que no se desordenen */
-.surtido-table th:nth-child(1), 
-.surtido-table td:nth-child(1) {
-    width: 35%;
-}
-
-.surtido-table th:nth-child(2), 
-.surtido-table td:nth-child(2) {
-    width: 25%;
-}
-
-.surtido-table th:nth-child(3), 
-.surtido-table td:nth-child(3) {
-    width: 25%;
-}
-
-.surtido-table th:nth-child(4), 
-.surtido-table td:nth-child(4) {
-    width: 15%;
-    text-align: right;
-}
-
-/* Ajuste de inputs dentro de la tabla de surtido */
-.surtido-table input {
-    width: 100%;
-    max-width: 130px;
-    padding: 0.5rem;
-    font-size: 0.9rem;
 }
