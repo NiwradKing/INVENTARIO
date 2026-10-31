@@ -15,7 +15,6 @@
             <span>Bodega Control</span>
         </div>
         
-        <!-- Control de Usuario Responsable sin contraseña -->
         <div class="operator-box">
             <i class="fa-solid fa-user-gear"></i>
             <label for="operator-name">Operador:</label>
@@ -40,10 +39,11 @@
 
     <main class="container">
         
-        <!-- Panel Izquierdo: Formulario de Registro / Retiro -->
+        <!-- Panel Izquierdo: Formularios -->
         <div class="sidebar">
+            <!-- Formulario Producto Nuevo -->
             <section class="card form-card">
-                <h2><i class="fa-solid fa-square-plus"></i> Registrar / Editar Bebida</h2>
+                <h2><i class="fa-solid fa-square-plus"></i> Registrar Nueva Bebida</h2>
                 <form id="inventory-form">
                     <input type="hidden" id="edit-id">
                     
@@ -71,7 +71,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="prod-stock">Cantidad en Stock</label>
+                        <label for="prod-stock">Cantidad Inicial</label>
                         <input type="number" id="prod-stock" min="0" placeholder="Ej: 48" required>
                     </div>
 
@@ -86,14 +86,14 @@
                 </form>
             </section>
 
-            <!-- Card de Retiros / Salidas de Bodega -->
+            <!-- Card de Registro de Salida / Retiro -->
             <section class="card form-card">
                 <h2><i class="fa-solid fa-boxes-packing"></i> Registrar Salida / Retiro</h2>
                 <form id="out-form">
                     <div class="form-group">
                         <label for="out-select">Seleccionar Producto</label>
                         <select id="out-select" required>
-                            <option value="">-- Cargar productos --</option>
+                            <option value="">-- Seleccionar --</option>
                         </select>
                     </div>
 
@@ -109,8 +109,31 @@
             </section>
         </div>
 
-        <!-- Panel Derecho: Tablas de Inventario y Registro de Historial -->
+        <!-- Panel Derecho: Tablas de Inventario, Surtido Masivo e Historial -->
         <div class="content-area">
+            
+            <!-- Panel de Surtido Masivo (Entrada de mercancía rápida) -->
+            <section class="card form-card">
+                <h2><i class="fa-solid fa-truck-ramp-box"></i> Ingreso Masivo de Surtido</h2>
+                <p class="section-desc">Selecciona el producto que llegó, ingresa cuántas unidades se suman y actualiza su precio si cambió.</p>
+                
+                <div class="table-responsive">
+                    <table class="surtido-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Sumar Stock (+ Cantidad)</th>
+                                <th>Nuevo Precio (Opcional)</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="surtido-tbody">
+                            <!-- Se llena dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
             <!-- Tabla de Existencias -->
             <section class="card table-card">
                 <div class="table-header">
@@ -143,7 +166,7 @@
                 </div>
             </section>
 
-            <!-- Tabla de Historial Completo de Cambios -->
+            <!-- Tabla de Historial Auditor -->
             <section class="card table-card">
                 <div class="table-header">
                     <h2><i class="fa-solid fa-clock-rotate-left"></i> Registro Auditor de Movimientos</h2>
