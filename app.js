@@ -96,6 +96,7 @@ function renderTable(filter = '') {
 
 // Renderizar Tabla de Ingreso Masivo (Surtido rápido)
 function renderSurtidoTable() {
+    if (!surtidoTbody) return;
     surtidoTbody.innerHTML = '';
 
     if (inventario.length === 0) {
@@ -169,11 +170,12 @@ function aplicarSurtido(id) {
 
 // Renderizar Historial
 function renderHistory() {
+    if (!historyTbody) return;
     historyTbody.innerHTML = '';
     if (historial.length === 0) {
-        emptyHistory.style.display = 'block';
+        if (emptyHistory) emptyHistory.style.display = 'block';
     } else {
-        emptyHistory.style.display = 'none';
+        if (emptyHistory) emptyHistory.style.display = 'none';
         historial.forEach(item => {
             const tr = document.createElement('tr');
             let badgeClass = 'action-edit';
@@ -192,6 +194,7 @@ function renderHistory() {
 }
 
 function updateOutSelectOptions() {
+    if (!outSelect) return;
     outSelect.innerHTML = '<option value="">-- Seleccionar --</option>';
     inventario.forEach(p => {
         const option = document.createElement('option');
@@ -212,7 +215,6 @@ function saveToStorage() {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(historial));
 }
 
-// Crear / Editar Normal
 form.addEventListener('submit', (e) => {
     e.preventDefault();
     const operador = operatorInput.value.trim() || 'Operador';
@@ -235,7 +237,6 @@ form.addEventListener('submit', (e) => {
     resetForm();
 });
 
-// Registrar Retiro
 outForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const operador = operatorInput.value.trim() || 'Operador';
