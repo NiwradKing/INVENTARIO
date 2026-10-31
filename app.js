@@ -22,6 +22,7 @@ const outSelect = document.getElementById('out-select');
 const outQtyInput = document.getElementById('out-qty');
 
 const tbody = document.getElementById('inventory-tbody');
+const surtidoTbody = document.getElementById('surtido-tbody');
 const emptyState = document.getElementById('empty-state');
 const historyTbody = document.getElementById('history-tbody');
 const emptyHistory = document.getElementById('empty-history');
@@ -59,6 +60,7 @@ function registrarLog(usuario, accion, detalle) {
     renderHistory();
 }
 
+// Renderizar Inventario principal
 function renderTable(filter = '') {
     tbody.innerHTML = '';
     const productosFiltrados = inventario.filter(p => 
@@ -89,8 +91,83 @@ function renderTable(filter = '') {
 
     updateStats();
     updateOutSelectOptions();
+    renderSurtidoTable();
 }
 
+// Renderizar Tabla de Ingreso Masivo (Surtido rápido)
+function renderSurtidoTable() {
+    surtidoTbody.innerHTML = '';
+
+    if (inventario.length === 0) {
+        surtidoTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted);">No hay productos para surtir.</td></tr>`;
+        return;
+    }
+
+    inventario.forEach(prod => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>
+                <strong>${prod.nombre}</strong><br>
+                <small style="color:var(--text-muted);">Stock actual: ${prod.stock} | Ant: $${prod.precio.toLocaleString('es-CO')}</small>
+            </td>
+            <td>
+                <input type="number" id="add-qty-${prod.id}" min="0" placeholder="+ Cantidad" style="width: 100px;">
+            </td>
+            <td>
+                <input type="number" id="new-price-${prod.id}" min="0" step="50" placeholder="${prod.precio}" style="width: 110px;">
+            </td>
+            <td>
+                <button type="button" class="btn btn-success btn-sm" onclick="aplicarSurtido('${prod.id}')">
+                    <i class="fa-solid fa-check"></i> Aplicar
+                </button>
+            </td>
+        `;
+        surtidoTbody.appendChild(tr);
+    });
+}
+
+// Función para procesar el surtido rápido por producto
+function aplicarSurtido(id) {
+    const operador = operatorInput.value.trim() || 'Operador';
+    const prod = inventario.find(p => p.id === id);
+    if (!prod) return;
+
+    const inputQty = document.getElementById(`add-qty-${id}`);
+    const inputPrice = document.getElementById(`new-price-${id}`);
+
+    const cantidadASumar = parseInt(inputQty.value) || 0;
+    const precioNuevo = parseFloat(inputPrice.value);
+
+    if (cantidadASumar <= 0 && isNaN(precioNuevo)) {
+        alert('Ingresa una cantidad a sumar o un precio nuevo.');
+        return;
+    }
+
+    let detalleCambios = [];
+
+    if (cantidadASumar > 0) {
+        prod.stock += cantidadASumar;
+        detalleCambios.push(`Sumó +${cantidadASumar} u. (Stock total: ${prod.stock})`);
+    }
+
+    if (!isNaN(precioNuevo) && precioNuevo !== prod.precio) {
+        const precioAnterior = prod.precio;
+        prod.precio = precioNuevo;
+        const diferencia = precioNuevo > precioAnterior ? 'subió' : 'bajó';
+        detalleCambios.push(`Precio ${diferencia} de $${precioAnterior.toLocaleString('es-CO')} a $${precioNuevo.toLocaleString('es-CO')}`);
+    }
+
+    if (detalleCambios.length > 0) {
+        registrarLog(operador, 'Surtido / Actualización', `En '${prod.nombre}': ${detalleCambios.join(' | ')}`);
+        saveToStorage();
+        renderTable(searchInput.value);
+        alert(`¡Surtido aplicado correctamente a ${prod.nombre}!`);
+    } else {
+        alert('No se detectaron cambios válidos.');
+    }
+}
+
+// Renderizar Historial
 function renderHistory() {
     historyTbody.innerHTML = '';
     if (historial.length === 0) {
@@ -100,7 +177,7 @@ function renderHistory() {
         historial.forEach(item => {
             const tr = document.createElement('tr');
             let badgeClass = 'action-edit';
-            if (item.accion.includes('Creación') || item.accion.includes('Suma')) badgeClass = 'action-add';
+            if (item.accion.includes('Creación') || item.accion.includes('Suma') || item.accion.includes('Surtido')) badgeClass = 'action-add';
             if (item.accion.includes('Retiro') || item.accion.includes('Eliminado')) badgeClass = 'action-out';
 
             tr.innerHTML = `
@@ -115,7 +192,7 @@ function renderHistory() {
 }
 
 function updateOutSelectOptions() {
-    outSelect.innerHTML = '<option value="">-- Seleccionar producto --</option>';
+    outSelect.innerHTML = '<option value="">-- Seleccionar --</option>';
     inventario.forEach(p => {
         const option = document.createElement('option');
         option.value = p.id;
@@ -135,6 +212,7 @@ function saveToStorage() {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(historial));
 }
 
+// Crear / Editar Normal
 form.addEventListener('submit', (e) => {
     e.preventDefault();
     const operador = operatorInput.value.trim() || 'Operador';
@@ -153,10 +231,11 @@ form.addEventListener('submit', (e) => {
     }
 
     saveToStorage();
-    renderTable();
+    renderTable(searchInput.value);
     resetForm();
 });
 
+// Registrar Retiro
 outForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const operador = operatorInput.value.trim() || 'Operador';
@@ -175,8 +254,7 @@ outForm.addEventListener('submit', (e) => {
     registrarLog(operador, 'Retiro/Salida', `Retiró ${cantidad} u. de '${prod.nombre}' (Quedan: ${prod.stock})`);
 
     saveToStorage();
-    renderTable();
-    renderHistory();
+    renderTable(searchInput.value);
     outForm.reset();
 });
 
@@ -187,7 +265,7 @@ function deleteProduct(id) {
         inventario = inventario.filter(p => p.id !== id);
         registrarLog(operador, 'Eliminado', `Eliminó el producto '${prod.nombre}'`);
         saveToStorage();
-        renderTable();
+        renderTable(searchInput.value);
     }
 }
 
