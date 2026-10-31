@@ -1,15 +1,22 @@
-// Configuración de tu proyecto de Firebase
+// ==========================================
+// CONFIGURACIÓN DE FIREBASE (Pega aquí tus credenciales reales)
+// ==========================================
 const firebaseConfig = {
-    apiKey: "AIzaSy...", // Tus datos reales
+    apiKey: "AQUÍ_VA_TU_API_KEY_REAL",
     authDomain: "tu-proyecto.firebaseapp.com",
-    projectId: "tu-proyecto",
+    projectId: "tu-proyecto-id",
     storageBucket: "tu-proyecto.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123:web:abc"
+    messagingSenderId: "tu-sender-id",
+    appId: "tu-app-id"
 };
 
-// Inicializar Firebase y Firestore
-firebase.initializeApp(firebaseConfig);
+// Inicializar Firebase de forma segura
+try {
+    firebase.initializeApp(firebaseConfig);
+} catch (e) {
+    console.error("Error al inicializar Firebase:", e);
+}
+
 const db = firebase.firestore();
 
 let inventario = [];
@@ -65,47 +72,66 @@ function registrarLog(usuario, accion, detalle) {
         dispositivo,
         accion,
         detalle
-    });
+    }).catch(err => console.error("Error al registrar log:", err));
 }
 
-// Sincronización en tiempo real con Firestore (Colección 'inventario')
+// ==========================================
+// SINCRONIZACIÓN EN TIEMPO REAL CON FIRESTORE
+// ==========================================
+
+// Escuchar cambios en la colección 'inventario' en tiempo real
 db.collection('inventario').onSnapshot((snapshot) => {
-    inventario = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-    }));
+    inventario = [];
+    snapshot.forEach(doc => {
+        inventario.push({
+            id: doc.id,
+            ...doc.data()
+        });
+    });
     renderTable(searchInput ? searchInput.value : '');
+}, (error) => {
+    console.error("Error al escuchar inventario de Firestore:", error);
 });
 
-// Sincronización en tiempo real con Firestore (Historial)
+// Escuchar cambios en la colección 'historial'
 db.collection('historial').orderBy('timestamp', 'desc').limit(50).onSnapshot((snapshot) => {
-    historial = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-    }));
+    historial = [];
+    snapshot.forEach(doc => {
+        historial.push({
+            id: doc.id,
+            ...doc.data()
+        });
+    });
     renderHistory();
+}, (error) => {
+    console.error("Error al escuchar historial:", error);
 });
 
 // Renderizar Inventario principal
 function renderTable(filter = '') {
+    if (!tbody) return;
     tbody.innerHTML = '';
+    
     const productosFiltrados = inventario.filter(p => 
-        p.nombre.toLowerCase().includes(filter.toLowerCase()) ||
-        p.categoria.toLowerCase().includes(filter.toLowerCase())
+        (p.nombre && p.nombre.toLowerCase().includes(filter.toLowerCase())) ||
+        (p.categoria && p.categoria.toLowerCase().includes(filter.toLowerCase()))
     );
 
     if (productosFiltrados.length === 0) {
-        emptyState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'block';
     } else {
-        emptyState.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'none';
         productosFiltrados.forEach(prod => {
             const tr = document.createElement('tr');
+            const precioVal = Number(prod.precio) || 0;
+            const stockVal = Number(prod.stock) || 0;
+
             tr.innerHTML = `
-                <td><strong>${prod.nombre}</strong></td>
-                <td><span class="badge">${prod.categoria}</span></td>
-                <td>$${Number(prod.precio).toLocaleString('es-CO')}</td>
-                <td><strong>${prod.stock}</strong> u.</td>
-                <td>$${(prod.precio * prod.stock).toLocaleString('es-CO')}</td>
+                <td><strong>${prod.nombre || 'Sin nombre'}</strong></td>
+                <td><span class="badge">${prod.categoria || 'General'}</span></td>
+                <td>$${precioVal.toLocaleString('es-CO')}</td>
+                <td><strong>${stockVal}</strong> u.</td>
+                <td>$${(precioVal * stockVal).toLocaleString('es-CO')}</td>
                 <td class="actions-cell">
                     <button class="btn-icon edit" onclick="startEdit('${prod.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
                     <button class="btn-icon delete" onclick="deleteProduct('${prod.id}')" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
@@ -132,10 +158,11 @@ function renderSurtidoTable() {
 
     inventario.forEach(prod => {
         const tr = document.createElement('tr');
+        const precioAnt = Number(prod.precio) || 0;
         tr.innerHTML = `
             <td>
                 <strong>${prod.nombre}</strong><br>
-                <small style="color:var(--text-muted);">Stock actual: ${prod.stock} | Ant: $${Number(prod.precio).toLocaleString('es-CO')}</small>
+                <small style="color:var(--text-muted);">Stock actual: ${prod.stock} | Ant: $${precioAnt.toLocaleString('es-CO')}</small>
             </td>
             <td>
                 <input type="number" id="add-qty-${prod.id}" min="0" placeholder="+ Cantidad">
@@ -187,13 +214,18 @@ async function aplicarSurtido(id) {
     }
 
     if (detalleCambios.length > 0) {
-        await db.collection('inventario').doc(id).update({
-            stock: nuevoStock,
-            precio: nuevoPrecio
-        });
+        try {
+            await db.collection('inventario').doc(id).update({
+                stock: nuevoStock,
+                precio: nuevoPrecio
+            });
 
-        registrarLog(operador, 'Surtido / Actualización', `En '${prod.nombre}': ${detalleCambios.join(' | ')}`);
-        alert(`¡Surtido aplicado correctamente a ${prod.nombre}!`);
+            registrarLog(operador, 'Surtido / Actualización', `En '${prod.nombre}': ${detalleCambios.join(' | ')}`);
+            alert(`¡Surtido aplicado correctamente a ${prod.nombre}!`);
+        } catch (e) {
+            console.error("Error al aplicar surtido:", e);
+            alert("Error al actualizar en Firebase. Revisa las reglas de seguridad.");
+        }
     }
 }
 
@@ -208,14 +240,14 @@ function renderHistory() {
         historial.forEach(item => {
             const tr = document.createElement('tr');
             let badgeClass = 'action-edit';
-            if (item.accion.includes('Creación') || item.accion.includes('Suma') || item.accion.includes('Surtido')) badgeClass = 'action-add';
-            if (item.accion.includes('Retiro') || item.accion.includes('Eliminado')) badgeClass = 'action-out';
+            if (item.accion && (item.accion.includes('Creación') || item.accion.includes('Suma') || item.accion.includes('Surtido'))) badgeClass = 'action-add';
+            if (item.accion && (item.accion.includes('Retiro') || item.accion.includes('Eliminado'))) badgeClass = 'action-out';
 
             tr.innerHTML = `
                 <td><i class="fa-regular fa-clock"></i> ${item.fechaHora || ''}</td>
-                <td><strong><i class="fa-solid fa-user"></i> ${item.usuario}</strong></td>
-                <td><small>${item.dispositivo}</small></td>
-                <td><span class="badge-action ${badgeClass}">${item.accion}:</span> ${item.detalle}</td>
+                <td><strong><i class="fa-solid fa-user"></i> ${item.usuario || 'Anónimo'}</strong></td>
+                <td><small>${item.dispositivo || ''}</small></td>
+                <td><span class="badge-action ${badgeClass}">${item.accion || 'Acción'}:</span> ${item.detalle || ''}</td>
             `;
             historyTbody.appendChild(tr);
         });
@@ -234,9 +266,17 @@ function updateOutSelectOptions() {
 }
 
 function updateStats() {
-    document.getElementById('stat-total-prod').textContent = inventario.length;
-    document.getElementById('stat-total-stock').textContent = inventario.reduce((sum, p) => sum + Number(p.stock), 0);
-    document.getElementById('stat-total-val').textContent = `$${inventario.reduce((sum, p) => sum + (p.precio * p.stock), 0).toLocaleString('es-CO')}`;
+    const totalProd = inventario.length;
+    const totalStock = inventario.reduce((sum, p) => sum + (Number(p.stock) || 0), 0);
+    const totalVal = inventario.reduce((sum, p) => sum + ((Number(p.precio) || 0) * (Number(p.stock) || 0)), 0);
+
+    const elProd = document.getElementById('stat-total-prod');
+    const elStock = document.getElementById('stat-total-stock');
+    const elVal = document.getElementById('stat-total-val');
+
+    if (elProd) elProd.textContent = totalProd;
+    if (elStock) elStock.textContent = totalStock;
+    if (elVal) elVal.textContent = `$${totalVal.toLocaleString('es-CO')}`;
 }
 
 // Guardar o Editar Producto en Firebase
@@ -249,15 +289,19 @@ form.addEventListener('submit', async (e) => {
     const precio = parseFloat(priceInput.value);
     const stock = parseInt(stockInput.value);
 
-    if (id) {
-        await db.collection('inventario').doc(id).update({ nombre, categoria, precio, stock });
-        registrarLog(operador, 'Modificación', `Actualizó '${nombre}' (Stock: ${stock}, Precio: $${precio})`);
-    } else {
-        await db.collection('inventario').add({ nombre, categoria, precio, stock });
-        registrarLog(operador, 'Creación', `Agregó '${nombre}' con ${stock} u.`);
+    try {
+        if (id) {
+            await db.collection('inventario').doc(id).update({ nombre, categoria, precio, stock });
+            registrarLog(operador, 'Modificación', `Actualizó '${nombre}' (Stock: ${stock}, Precio: $${precio})`);
+        } else {
+            await db.collection('inventario').add({ nombre, categoria, precio, stock });
+            registrarLog(operador, 'Creación', `Agregó '${nombre}' con ${stock} u.`);
+        }
+        resetForm();
+    } catch (err) {
+        console.error("Error al guardar en Firestore:", err);
+        alert("No se pudo guardar el producto. Verifica los permisos de Firebase.");
     }
-
-    resetForm();
 });
 
 // Registrar Retiro en Firebase
@@ -269,36 +313,50 @@ outForm.addEventListener('submit', async (e) => {
 
     if (!id) return;
     const prod = inventario.find(p => p.id === id);
+    if (!prod) return;
 
     if (cantidad > prod.stock) {
         alert(`Stock insuficiente.`);
         return;
     }
 
-    const nuevoStock = prod.stock - cantidad;
-    await db.collection('inventario').doc(id).update({ stock: nuevoStock });
-    registrarLog(operador, 'Retiro/Salida', `Retiró ${cantidad} u. de '${prod.nombre}' (Quedan: ${nuevoStock})`);
-
-    outForm.reset();
+    try {
+        const nuevoStock = prod.stock - cantidad;
+        await db.collection('inventario').doc(id).update({ stock: nuevoStock });
+        registrarLog(operador, 'Retiro/Salida', `Retiró ${cantidad} u. de '${prod.nombre}' (Quedan: ${nuevoStock})`);
+        outForm.reset();
+    } catch (err) {
+        console.error("Error al registrar salida:", err);
+    }
 });
 
 // Eliminar Producto en Firebase
 async function deleteProduct(id) {
     const operador = operatorInput.value.trim() || 'Operador';
     const prod = inventario.find(p => p.id === id);
+    if (!prod) return;
+
     if (confirm(`¿Eliminar ${prod.nombre}?`)) {
-        await db.collection('inventario').doc(id).delete();
-        registrarLog(operador, 'Eliminado', `Eliminó el producto '${prod.nombre}'`);
+        try {
+            await db.collection('inventario').doc(id).delete();
+            registrarLog(operador, 'Eliminado', `Eliminó el producto '${prod.nombre}'`);
+        } catch (err) {
+            console.error("Error al eliminar:", err);
+        }
     }
 }
 
 // Limpiar Historial en Firebase
 btnClearHistory.addEventListener('click', async () => {
     if (confirm('¿Limpiar registro de historial?')) {
-        const snapshot = await db.collection('historial').get();
-        const batch = db.batch();
-        snapshot.docs.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
+        try {
+            const snapshot = await db.collection('historial').get();
+            const batch = db.batch();
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+        } catch (err) {
+            console.error("Error al limpiar historial:", err);
+        }
     }
 });
 
@@ -322,7 +380,9 @@ function resetForm() {
     btnCancel.style.display = 'none';
 }
 
-searchInput.addEventListener('input', (e) => renderTable(e.target.value));
+if (searchInput) {
+    searchInput.addEventListener('input', (e) => renderTable(e.target.value));
+}
 
 // Menú desplegable (Acordeón)
 const accordionToggle = document.getElementById('accordion-toggle');
