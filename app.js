@@ -1,12 +1,21 @@
-const STORAGE_KEY = 'bodega_inventario_db';
-const HISTORY_KEY = 'bodega_historial_db';
+// Configuración de tu proyecto de Firebase
+const firebaseConfig = {
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_PROJECT_ID.firebaseapp.com",
+    projectId: "TU_PROJECT_ID",
+    storageBucket: "TU_PROJECT_ID.appspot.com",
+    messagingSenderId: "TU_SENDER_ID",
+    appId: "TU_APP_ID"
+};
 
-let inventario = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
-    { id: '1', nombre: 'Cerveza Poker 330ml', categoria: 'Cervezas', precio: 3500, stock: 120 },
-    { id: '2', nombre: 'Coca Cola 1.5L', categoria: 'Gaseosas', precio: 6000, stock: 45 }
-];
-let historial = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+// Inicializar Firebase y Firestore
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
+let inventario = [];
+let historial = [];
+
+// Elementos del DOM
 const operatorInput = document.getElementById('operator-name');
 const form = document.getElementById('inventory-form');
 const editIdInput = document.getElementById('edit-id');
@@ -43,22 +52,39 @@ function obtenerDetallesDispositivo() {
     return "📱 Dispositivo Móvil";
 }
 
+// Registrar logs en Firebase
 function registrarLog(usuario, accion, detalle) {
     const ahora = new Date();
     const fechaHora = ahora.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'medium' });
     const dispositivo = obtenerDetallesDispositivo();
 
-    historial.unshift({
+    db.collection('historial').add({
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         fechaHora,
         usuario: usuario || 'Anónimo',
         dispositivo,
         accion,
         detalle
     });
-
-    saveToStorage();
-    renderHistory();
 }
+
+// Sincronización en tiempo real con Firestore (Colección 'inventario')
+db.collection('inventario').onSnapshot((snapshot) => {
+    inventario = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }));
+    renderTable(searchInput ? searchInput.value : '');
+});
+
+// Sincronización en tiempo real con Firestore (Historial)
+db.collection('historial').orderBy('timestamp', 'desc').limit(50).onSnapshot((snapshot) => {
+    historial = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }));
+    renderHistory();
+});
 
 // Renderizar Inventario principal
 function renderTable(filter = '') {
@@ -77,7 +103,7 @@ function renderTable(filter = '') {
             tr.innerHTML = `
                 <td><strong>${prod.nombre}</strong></td>
                 <td><span class="badge">${prod.categoria}</span></td>
-                <td>$${prod.precio.toLocaleString('es-CO')}</td>
+                <td>$${Number(prod.precio).toLocaleString('es-CO')}</td>
                 <td><strong>${prod.stock}</strong> u.</td>
                 <td>$${(prod.precio * prod.stock).toLocaleString('es-CO')}</td>
                 <td class="actions-cell">
@@ -94,7 +120,7 @@ function renderTable(filter = '') {
     renderSurtidoTable();
 }
 
-// Renderizar Tabla de Ingreso Masivo (Surtido rápido)
+// Renderizar Tabla de Surtido Masivo
 function renderSurtidoTable() {
     if (!surtidoTbody) return;
     surtidoTbody.innerHTML = '';
@@ -109,13 +135,13 @@ function renderSurtidoTable() {
         tr.innerHTML = `
             <td>
                 <strong>${prod.nombre}</strong><br>
-                <small style="color:var(--text-muted);">Stock actual: ${prod.stock} | Ant: $${prod.precio.toLocaleString('es-CO')}</small>
+                <small style="color:var(--text-muted);">Stock actual: ${prod.stock} | Ant: $${Number(prod.precio).toLocaleString('es-CO')}</small>
             </td>
             <td>
-                <input type="number" id="add-qty-${prod.id}" min="0" placeholder="+ Cantidad" style="width: 100px;">
+                <input type="number" id="add-qty-${prod.id}" min="0" placeholder="+ Cantidad">
             </td>
             <td>
-                <input type="number" id="new-price-${prod.id}" min="0" step="50" placeholder="${prod.precio}" style="width: 110px;">
+                <input type="number" id="new-price-${prod.id}" min="0" step="50" placeholder="${prod.precio}">
             </td>
             <td>
                 <button type="button" class="btn btn-success btn-sm" onclick="aplicarSurtido('${prod.id}')">
@@ -127,8 +153,8 @@ function renderSurtidoTable() {
     });
 }
 
-// Función para procesar el surtido rápido por producto
-function aplicarSurtido(id) {
+// Procesar el surtido rápido en Firebase
+async function aplicarSurtido(id) {
     const operador = operatorInput.value.trim() || 'Operador';
     const prod = inventario.find(p => p.id === id);
     if (!prod) return;
@@ -144,27 +170,30 @@ function aplicarSurtido(id) {
         return;
     }
 
+    let nuevoStock = prod.stock;
+    let nuevoPrecio = prod.precio;
     let detalleCambios = [];
 
     if (cantidadASumar > 0) {
-        prod.stock += cantidadASumar;
-        detalleCambios.push(`Sumó +${cantidadASumar} u. (Stock total: ${prod.stock})`);
+        nuevoStock += cantidadASumar;
+        detalleCambios.push(`Sumó +${cantidadASumar} u. (Stock total: ${nuevoStock})`);
     }
 
     if (!isNaN(precioNuevo) && precioNuevo !== prod.precio) {
         const precioAnterior = prod.precio;
-        prod.precio = precioNuevo;
+        nuevoPrecio = precioNuevo;
         const diferencia = precioNuevo > precioAnterior ? 'subió' : 'bajó';
         detalleCambios.push(`Precio ${diferencia} de $${precioAnterior.toLocaleString('es-CO')} a $${precioNuevo.toLocaleString('es-CO')}`);
     }
 
     if (detalleCambios.length > 0) {
+        await db.collection('inventario').doc(id).update({
+            stock: nuevoStock,
+            precio: nuevoPrecio
+        });
+
         registrarLog(operador, 'Surtido / Actualización', `En '${prod.nombre}': ${detalleCambios.join(' | ')}`);
-        saveToStorage();
-        renderTable(searchInput.value);
         alert(`¡Surtido aplicado correctamente a ${prod.nombre}!`);
-    } else {
-        alert('No se detectaron cambios válidos.');
     }
 }
 
@@ -183,7 +212,7 @@ function renderHistory() {
             if (item.accion.includes('Retiro') || item.accion.includes('Eliminado')) badgeClass = 'action-out';
 
             tr.innerHTML = `
-                <td><i class="fa-regular fa-clock"></i> ${item.fechaHora}</td>
+                <td><i class="fa-regular fa-clock"></i> ${item.fechaHora || ''}</td>
                 <td><strong><i class="fa-solid fa-user"></i> ${item.usuario}</strong></td>
                 <td><small>${item.dispositivo}</small></td>
                 <td><span class="badge-action ${badgeClass}">${item.accion}:</span> ${item.detalle}</td>
@@ -210,12 +239,8 @@ function updateStats() {
     document.getElementById('stat-total-val').textContent = `$${inventario.reduce((sum, p) => sum + (p.precio * p.stock), 0).toLocaleString('es-CO')}`;
 }
 
-function saveToStorage() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(inventario));
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(historial));
-}
-
-form.addEventListener('submit', (e) => {
+// Guardar o Editar Producto en Firebase
+form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const operador = operatorInput.value.trim() || 'Operador';
     const id = editIdInput.value;
@@ -225,19 +250,18 @@ form.addEventListener('submit', (e) => {
     const stock = parseInt(stockInput.value);
 
     if (id) {
-        inventario = inventario.map(p => p.id === id ? { id, nombre, categoria, precio, stock } : p);
+        await db.collection('inventario').doc(id).update({ nombre, categoria, precio, stock });
         registrarLog(operador, 'Modificación', `Actualizó '${nombre}' (Stock: ${stock}, Precio: $${precio})`);
     } else {
-        inventario.push({ id: Date.now().toString(), nombre, categoria, precio, stock });
+        await db.collection('inventario').add({ nombre, categoria, precio, stock });
         registrarLog(operador, 'Creación', `Agregó '${nombre}' con ${stock} u.`);
     }
 
-    saveToStorage();
-    renderTable(searchInput.value);
     resetForm();
 });
 
-outForm.addEventListener('submit', (e) => {
+// Registrar Retiro en Firebase
+outForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const operador = operatorInput.value.trim() || 'Operador';
     const id = outSelect.value;
@@ -251,30 +275,30 @@ outForm.addEventListener('submit', (e) => {
         return;
     }
 
-    prod.stock -= cantidad;
-    registrarLog(operador, 'Retiro/Salida', `Retiró ${cantidad} u. de '${prod.nombre}' (Quedan: ${prod.stock})`);
+    const nuevoStock = prod.stock - cantidad;
+    await db.collection('inventario').doc(id).update({ stock: nuevoStock });
+    registrarLog(operador, 'Retiro/Salida', `Retiró ${cantidad} u. de '${prod.nombre}' (Quedan: ${nuevoStock})`);
 
-    saveToStorage();
-    renderTable(searchInput.value);
     outForm.reset();
 });
 
-function deleteProduct(id) {
+// Eliminar Producto en Firebase
+async function deleteProduct(id) {
     const operador = operatorInput.value.trim() || 'Operador';
     const prod = inventario.find(p => p.id === id);
     if (confirm(`¿Eliminar ${prod.nombre}?`)) {
-        inventario = inventario.filter(p => p.id !== id);
+        await db.collection('inventario').doc(id).delete();
         registrarLog(operador, 'Eliminado', `Eliminó el producto '${prod.nombre}'`);
-        saveToStorage();
-        renderTable(searchInput.value);
     }
 }
 
-btnClearHistory.addEventListener('click', () => {
+// Limpiar Historial en Firebase
+btnClearHistory.addEventListener('click', async () => {
     if (confirm('¿Limpiar registro de historial?')) {
-        historial = [];
-        saveToStorage();
-        renderHistory();
+        const snapshot = await db.collection('historial').get();
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
     }
 });
 
@@ -290,16 +314,6 @@ function startEdit(id) {
     btnCancel.style.display = 'inline-block';
 }
 
-// Control del menú desplegable (Acordeón) para Surtido Masivo
-const accordionToggle = document.getElementById('accordion-toggle');
-const accordionCard = document.querySelector('.accordion-card');
-
-if (accordionToggle && accordionCard) {
-    accordionToggle.addEventListener('click', () => {
-        accordionCard.classList.toggle('open');
-    });
-}
-
 btnCancel.addEventListener('click', resetForm);
 function resetForm() {
     form.reset();
@@ -310,5 +324,11 @@ function resetForm() {
 
 searchInput.addEventListener('input', (e) => renderTable(e.target.value));
 
-renderTable();
-renderHistory();
+// Menú desplegable (Acordeón)
+const accordionToggle = document.getElementById('accordion-toggle');
+const accordionCard = document.querySelector('.accordion-card');
+if (accordionToggle && accordionCard) {
+    accordionToggle.addEventListener('click', () => {
+        accordionCard.classList.toggle('open');
+    });
+}

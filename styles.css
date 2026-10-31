@@ -143,6 +143,7 @@ body {
     color: var(--success-color);
 }
 
+/* Contenedor Principal en una sola columna vertical limpia */
 .container {
     max-width: 900px;
     margin: 1.5rem auto;
@@ -174,7 +175,7 @@ body {
     gap: 0.5rem;
 }
 
-/* --- Estilos del Menú Desplegable (Acordeón de Surtido) --- */
+/* Estilos del Menú Desplegable (Acordeón de Surtido) */
 .accordion-header {
     display: flex;
     justify-content: space-between;
@@ -207,9 +208,8 @@ body {
     transition: max-height 0.35s ease-out, margin-top 0.35s ease;
 }
 
-/* Estado cuando está abierto */
 .accordion-card.open .accordion-content {
-    max-height: 1000px; /* Altura suficiente para mostrar la lista */
+    max-height: 1200px;
     margin-top: 1rem;
 }
 
@@ -362,7 +362,6 @@ th {
     font-weight: 600;
 }
 
-/* --- Tabla de Surtido Masivo --- */
 .surtido-table {
     width: 100%;
     border-collapse: collapse;
