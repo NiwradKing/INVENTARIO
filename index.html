@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Inventario - Bodega de Bebidas</title>
-    <!-- FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -15,6 +14,14 @@
             <i class="fa-solid fa-wine-bottle"></i>
             <span>Bodega Control</span>
         </div>
+        
+        <!-- Control de Usuario Responsable sin contraseña -->
+        <div class="operator-box">
+            <i class="fa-solid fa-user-gear"></i>
+            <label for="operator-name">Operador:</label>
+            <input type="text" id="operator-name" placeholder="Ej: Darwin" value="Operador 1">
+        </div>
+
         <div class="nav-stats">
             <div class="stat-pill">
                 <span>Total Productos:</span>
@@ -33,84 +40,138 @@
 
     <main class="container">
         
-        <!-- Panel Izquierdo: Formulario -->
-        <section class="card form-card">
-            <h2><i class="fa-solid fa-square-plus"></i> Registrar / Editar Bebida</h2>
-            <form id="inventory-form">
-                <input type="hidden" id="edit-id">
-                
-                <div class="form-group">
-                    <label for="prod-name">Nombre de la Bebida</label>
-                    <input type="text" id="prod-name" placeholder="Ej: Club Colombia 330ml" required>
-                </div>
-
-                <div class="form-row">
+        <!-- Panel Izquierdo: Formulario de Registro / Retiro -->
+        <div class="sidebar">
+            <section class="card form-card">
+                <h2><i class="fa-solid fa-square-plus"></i> Registrar / Editar Bebida</h2>
+                <form id="inventory-form">
+                    <input type="hidden" id="edit-id">
+                    
                     <div class="form-group">
-                        <label for="prod-category">Categoría</label>
-                        <select id="prod-category" required>
-                            <option value="Cervezas">Cervezas</option>
-                            <option value="Gaseosas">Gaseosas</option>
-                            <option value="Licores">Licores</option>
-                            <option value="Aguas y Jugos">Aguas y Jugos</option>
-                            <option value="Energizantes">Energizantes</option>
+                        <label for="prod-name">Nombre de la Bebida</label>
+                        <input type="text" id="prod-name" placeholder="Ej: Club Colombia 330ml" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="prod-category">Categoría</label>
+                            <select id="prod-category" required>
+                                <option value="Cervezas">Cervezas</option>
+                                <option value="Gaseosas">Gaseosas</option>
+                                <option value="Licores">Licores</option>
+                                <option value="Aguas y Jugos">Aguas y Jugos</option>
+                                <option value="Energizantes">Energizantes</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="prod-price">Precio Unitario (COP)</label>
+                            <input type="number" id="prod-price" min="0" step="50" placeholder="Ej: 4500" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="prod-stock">Cantidad en Stock</label>
+                        <input type="number" id="prod-stock" min="0" placeholder="Ej: 48" required>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" id="btn-save" class="btn btn-primary">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Producto
+                        </button>
+                        <button type="button" id="btn-cancel" class="btn btn-secondary" style="display: none;">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Card de Retiros / Salidas de Bodega -->
+            <section class="card form-card">
+                <h2><i class="fa-solid fa-boxes-packing"></i> Registrar Salida / Retiro</h2>
+                <form id="out-form">
+                    <div class="form-group">
+                        <label for="out-select">Seleccionar Producto</label>
+                        <select id="out-select" required>
+                            <option value="">-- Cargar productos --</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="prod-price">Precio Unitario (COP)</label>
-                        <input type="number" id="prod-price" min="0" step="50" placeholder="Ej: 4500" required>
+                        <label for="out-qty">Cantidad a Retirar</label>
+                        <input type="number" id="out-qty" min="1" placeholder="Ej: 5" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fa-solid fa-minus-circle"></i> Confirmar Salida
+                    </button>
+                </form>
+            </section>
+        </div>
+
+        <!-- Panel Derecho: Tablas de Inventario y Registro de Historial -->
+        <div class="content-area">
+            <!-- Tabla de Existencias -->
+            <section class="card table-card">
+                <div class="table-header">
+                    <h2><i class="fa-solid fa-boxes-stacked"></i> Existencias en Bodega</h2>
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="search-input" placeholder="Buscar bebida...">
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="prod-stock">Cantidad en Stock</label>
-                    <input type="number" id="prod-stock" min="0" placeholder="Ej: 48" required>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                                <th>Precio Unit.</th>
+                                <th>Stock</th>
+                                <th>Valor Total</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-tbody"></tbody>
+                    </table>
                 </div>
+                
+                <div id="empty-state" class="empty-state">
+                    <i class="fa-solid fa-box-open"></i>
+                    <p>No hay bebidas registradas en el inventario.</p>
+                </div>
+            </section>
 
-                <div class="form-actions">
-                    <button type="submit" id="btn-save" class="btn btn-primary">
-                        <i class="fa-solid fa-floppy-disk"></i> Guardar Producto
+            <!-- Tabla de Historial Completo de Cambios -->
+            <section class="card table-card">
+                <div class="table-header">
+                    <h2><i class="fa-solid fa-clock-rotate-left"></i> Registro Auditor de Movimientos</h2>
+                    <button id="btn-clear-history" class="btn btn-secondary btn-sm">
+                        <i class="fa-solid fa-trash"></i> Limpiar Historial
                     </button>
-                    <button type="button" id="btn-cancel" class="btn btn-secondary" style="display: none;">
-                        Cancelar
-                    </button>
                 </div>
-            </form>
-        </section>
 
-        <!-- Panel Derecho: Tabla de Inventario -->
-        <section class="card table-card">
-            <div class="table-header">
-                <h2><i class="fa-solid fa-boxes-stacked"></i> Existencias en Bodega</h2>
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="search-input" placeholder="Buscar bebida...">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha y Hora</th>
+                                <th>Usuario</th>
+                                <th>Dispositivo</th>
+                                <th>Acción Realizada</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody"></tbody>
+                    </table>
                 </div>
-            </div>
 
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Producto</th>
-                            <th>Categoría</th>
-                            <th>Precio Unit.</th>
-                            <th>Stock</th>
-                            <th>Valor Total</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="inventory-tbody">
-                        <!-- Se llena dinámicamente con JS -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <div id="empty-state" class="empty-state">
-                <i class="fa-solid fa-box-open"></i>
-                <p>No hay bebidas registradas en el inventario.</p>
-            </div>
-        </section>
+                <div id="empty-history" class="empty-state">
+                    <i class="fa-solid fa-receipt"></i>
+                    <p>No hay registro de actividad reciente.</p>
+                </div>
+            </section>
+        </div>
 
     </main>
 
